@@ -1,6 +1,10 @@
 # ParkEasy — Recherche, comparaison et réservation de places de parking
 
+<<<<<<< HEAD
 **Projet Web 2025/2026, Objectif 04 : finalisation du développement frontend et optimisation du site** (suite de l'Objectif 03).
+=======
+**Projet Web 2025/2026, Objectif 03 : développement et intégration des fonctionnalités principales.**
+>>>>>>> a6a31640effb84d50ad1b047dfffe59e64fe3c22
 Équipe : Chadha Ifaoui & Meysem Guerbej.
 
 ParkEasy permet aux **automobilistes** de rechercher, comparer et réserver une place de parking. Les **gestionnaires** y publient leurs parkings, leurs places et suivent les réservations reçues. L'**administrateur** supervise la plateforme.
@@ -50,12 +54,17 @@ Ouvrir **http://localhost:4200**.
 
 | Commande (racine) | Rôle |
 |---|---|
+<<<<<<< HEAD
 | `npm start` | Lance le backend et le frontend ensemble (développement, http://localhost:4200) |
 | `npm run prod` | Compile le frontend puis sert tout le site depuis l'API sur **http://localhost:3000** (version de production : gzip, cache) |
 | `npm run test:front` | Lance les 10 tests unitaires Angular (Chrome requis) |
 | `npm run lint` | ESLint sur le backend et le frontend |
 | `npm run format` | Remet en forme le code du frontend (Prettier) |
 | `npm test` | Lance les 14 tests automatisés de l'API sur une base séparée `parkeasy_test` |
+=======
+| `npm start` | Lance le backend et le frontend ensemble |
+| `npm test` | Lance les 12 tests automatisés de l'API sur une base séparée `parkeasy_test` |
+>>>>>>> a6a31640effb84d50ad1b047dfffe59e64fe3c22
 | `npm run reset-db` | Recrée la base avec des données de démo fraîches (dates recalculées à partir d'aujourd'hui), puis démarre l'API |
 | `npm run build` | Compile le frontend pour la production |
 
@@ -77,13 +86,21 @@ Ouvrir **http://localhost:4200**.
 
 | Couche | Technologie | Justification |
 |---|---|---|
+<<<<<<< HEAD
 | Frontend | **Angular 20** : composants *standalone*, *signals*, détection des changements **sans zone.js** (*zoneless*), formulaires réactifs, *guards* par rôle, *lazy loading* + préchargement sélectif | Framework annoncé dans l'Objectif 02. Une route Angular correspond à chaque écran de l'architecture de l'information. |
+=======
+| Frontend | **Angular 20** : composants *standalone*, *signals*, formulaires réactifs, *guards* par rôle, *lazy loading* | Framework annoncé dans l'Objectif 02. Une route Angular correspond à chaque écran de l'architecture de l'information. |
+>>>>>>> a6a31640effb84d50ad1b047dfffe59e64fe3c22
 | Carte | **Leaflet** + tuiles **OpenStreetMap** | Carte interactive gratuite et sans clé d'API. Chaque repère affiche le tarif du parking (maquette 2). |
 | Styles | SCSS + variables CSS reprenant la **charte graphique** de l'Objectif 02 | Couleurs bleu foncé, bleu action, vert, turquoise, orange et rouge ; cartes arrondies à 14 px. |
 | Backend | **Node.js + Express 5**, API REST/JSON, **JWT** + **bcrypt** | Le même langage côté client et serveur. L'API revérifie les droits du rôle à chaque requête. |
 | Base de données | **PostgreSQL** (driver `pg`) | Schéma identique au **dictionnaire de données** de l'Objectif 02. La règle RG10 est garantie par la contrainte `EXCLUDE USING gist`. La colonne `reference` est générée (`'RES-' ‖ (id + 1000)`). Les dates utilisent `TIMESTAMPTZ`, évaluées à l'heure de Tunis. |
+<<<<<<< HEAD
 | Tests | `node:test` (API), Jasmine + Karma (Angular) | Tests d'intégration de l'API (règles de gestion) et tests unitaires des composants et pipes. |
 | Qualité | ESLint (règles Angular + accessibilité des templates), Prettier | Code homogène, vérifié par `npm run lint`. |
+=======
+| Tests | `node:test` | Tests d'intégration de l'API, qui vérifient les règles de gestion. |
+>>>>>>> a6a31640effb84d50ad1b047dfffe59e64fe3c22
 
 ### Architecture
 
@@ -142,24 +159,38 @@ ParkEasy/
 │   │   ├── schema.sql           # 11 tables conformes au MLD, EXCLUDE gist, colonne générée
 │   │   ├── queries.sql          # requêtes clés (recherche, réservation, tableau de bord…)
 │   │   ├── seed.js              # données de démonstration (dates relatives à aujourd'hui)
+<<<<<<< HEAD
 │   │   ├── migrations/          # migrations idempotentes (001 : messages de contact)
+=======
+>>>>>>> a6a31640effb84d50ad1b047dfffe59e64fe3c22
 │   │   └── parkeasy_dump.sql    # export pg_dump complet (import manuel facultatif)
 │   ├── src/
 │   │   ├── server.js · app.js · db.js
 │   │   ├── business.js          # créneaux, disponibilités, montant, cycle de vie
 │   │   ├── middleware/auth.js   # JWT + contrôle des rôles
 │   │   └── routes/              # auth, parkings, driver, manager, admin, notifications
+<<<<<<< HEAD
 │   └── tests/api.test.js        # 14 tests (RG1, RG2, RG5, RG7, RG10, RG11, RG12, RG14, contact, conservation de la base)
+=======
+│   └── tests/api.test.js        # 12 tests (RG1, RG2, RG5, RG7, RG10, RG11, RG12, RG14…)
+>>>>>>> a6a31640effb84d50ad1b047dfffe59e64fe3c22
 └── frontend/
     ├── proxy.conf.json          # /api → localhost:3000
     ├── public/img/              # illustrations des parkings
     └── src/app/
+<<<<<<< HEAD
         ├── core/                # modèles, ApiService, AuthService, SearchState, guards, préchargement
         ├── layout/              # en-tête, pied de page, menu latéral, barre supérieure, onglets mobiles, notifications
         ├── components/          # un dossier par composant réutilisable (cartes, badges, modale, squelette, erreur…)
         ├── pipes/               # tnd, dateFr, hour, duration
         └── pages/               # home, search, parking-detail, reserve, my-reservations, favorites,
                                  # profile, help, manager/*, admin, admin/messages, auth, not-found
+=======
+        ├── core/                # modèles, ApiService, AuthService, SearchState, guards
+        ├── shared/              # icônes, cartes, carte Leaflet, graphique, formulaire de recherche
+        └── pages/               # home, search, parking-detail, reserve, my-reservations,
+                                 # favorites, profile, manager/*, admin, auth
+>>>>>>> a6a31640effb84d50ad1b047dfffe59e64fe3c22
 ```
 
 ---
@@ -182,8 +213,12 @@ ParkEasy/
 | GET / POST / PUT | `/api/manager/parkings[/:id]` · POST `/:id/spaces` · `/:id/photos` | gestionnaire |
 | PATCH | `/api/manager/spaces/:id` · `/api/manager/reservations/:id` | gestionnaire |
 | GET | `/api/manager/reservations?parking=&status=&from=&to=&q=&page=` | gestionnaire |
+<<<<<<< HEAD
 | GET / PATCH | `/api/admin/stats` · `/api/admin/parkings` · `/api/admin/users` · `/api/admin/messages` | administrateur |
 | POST | `/api/contact` (5 messages / 10 min par adresse IP) | public |
+=======
+| GET / PATCH | `/api/admin/stats` · `/api/admin/parkings` · `/api/admin/users` | administrateur |
+>>>>>>> a6a31640effb84d50ad1b047dfffe59e64fe3c22
 
 ---
 
@@ -202,18 +237,27 @@ ParkEasy/
 8. Se connecter en **Admin** : **valider le Parking Ennasr** (en attente). Il apparaît désormais dans la recherche publique. Suspendre puis réactiver un compte.
 9. **Anti-chevauchement** : réserver deux fois la même place sur deux créneaux qui se recoupent (deux onglets). La seconde demande est refusée avec le message « Cette place vient d'être réservée sur ce créneau ».
 10. **Mobile** : outils de développement (F12) → mode mobile : barre d'onglets en bas, carte au-dessus de la liste.
+<<<<<<< HEAD
 11. **Aide** : envoyer un message depuis `/aide`, puis le traiter en **Admin** → *Messages*.
 12. `npm test` : les 14 tests passent ; `npm run test:front` : les 10 tests Angular passent.
+=======
+11. `npm test` : les 12 tests passent.
+>>>>>>> a6a31640effb84d50ad1b047dfffe59e64fe3c22
 
 Pour repartir de données propres : `npm run reset-db`.
 
 ---
 
+<<<<<<< HEAD
 ## 7. Compatibilité et accessibilité (mis à jour à l'Objectif 04)
+=======
+## 7. Compatibilité et accessibilité
+>>>>>>> a6a31640effb84d50ad1b047dfffe59e64fe3c22
 
 Testé sous Chromium (Playwright) en 1440 px et en 390 px. Le site n'utilise que des API web standard : Chrome, Firefox, Edge et Safari récents.
 
 Accessibilité : HTML sémantique, `lang="fr"`, lien d'évitement, focus visible, libellés et attributs ARIA (plan des places, onglets, modales), statuts toujours accompagnés d'un texte (la couleur n'est jamais le seul indicateur), cibles tactiles d'au moins 44 px sur mobile, `prefers-reduced-motion`.
+<<<<<<< HEAD
 
 Objectif 04 : contrastes portés à au moins 4,5:1 (WCAG AA), focus placé dans les fenêtres modales et rendu à la fermeture, onglets au clavier (flèches), titre de page annoncé aux lecteurs d'écran à chaque navigation, erreurs de formulaire reliées à leur champ. Audit axe-core : 0 violation sur 17 pages ; Lighthouse : 100 en accessibilité et en SEO sur les pages publiques.
 
@@ -230,3 +274,5 @@ Objectif 04 : contrastes portés à au moins 4,5:1 (WCAG AA), focus placé dans 
 | Qualité | ESLint + Prettier (0 erreur), 10 tests Angular, 2 tests API supplémentaires, code inutilisé supprimé |
 
 Bundle initial : **424,87 kB → 337,29 kB** (−21 %), soit **116,29 kB → 96,25 kB** transférés après compression ; page de recherche : **164,81 kB → 18,19 kB**, la carte Leaflet étant chargée à part (`@defer`). Le détail des mesures (Lighthouse avant/après) figure dans le rapport de l'Objectif 04.
+=======
+>>>>>>> a6a31640effb84d50ad1b047dfffe59e64fe3c22
