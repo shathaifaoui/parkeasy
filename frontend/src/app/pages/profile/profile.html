@@ -1,0 +1,218 @@
+<div class="page">
+  <h1 class="sr-only">Mon profil</h1>
+  <div class="layout">
+    <!-- 1. Identité et navigation des paramètres -->
+    <aside class="card ident">
+      <span class="avatar">{{ initials() }}</span>
+      <h2>{{ auth.user()?.first_name }} {{ auth.user()?.last_name }}</h2>
+      <span class="badge badge-blue">{{ roleLabel() }}</span>
+      <p class="muted small">Membre depuis le {{ auth.user()?.created_at | dateFr: 'short' }}</p>
+      <nav class="sections">
+        <a href="#infos"><app-icon name="user" [size]="16" /> Informations</a>
+        @if (auth.isDriver()) {
+          <a href="#vehicules"><app-icon name="car" [size]="16" /> Véhicules</a>
+        }
+        <a href="#notifications"><app-icon name="bell" [size]="16" /> Notifications</a>
+        <a href="#securite"><app-icon name="shield" [size]="16" /> Sécurité</a>
+      </nav>
+      <button class="btn btn-ghost btn-sm logout" (click)="auth.logout()">
+        <app-icon name="logout" [size]="16" /> Déconnexion
+      </button>
+    </aside>
+
+    <div class="stack">
+      <!-- 2. Informations personnelles -->
+      <section class="card" id="infos">
+        <h2>Informations personnelles</h2>
+        <form class="form" [formGroup]="info" (ngSubmit)="saveInfo()">
+          <div class="form-row">
+            <div class="field">
+              <label for="fn">Prénom</label
+              ><input
+                id="fn"
+                class="input"
+                formControlName="first_name"
+                autocomplete="given-name"
+              />
+            </div>
+            <div class="field">
+              <label for="ln">Nom</label
+              ><input
+                id="ln"
+                class="input"
+                formControlName="last_name"
+                autocomplete="family-name"
+              />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label for="em">E-mail</label
+              ><input id="em" class="input" [value]="auth.user()?.email" disabled />
+              <span class="hint">L'e-mail sert d'identifiant et ne peut pas être modifié.</span>
+            </div>
+            <div class="field">
+              <label for="ph">Téléphone</label
+              ><input
+                id="ph"
+                class="input"
+                formControlName="phone"
+                autocomplete="tel"
+                placeholder="ex. 22 345 678"
+              />
+              @if (info.controls.phone.invalid && info.controls.phone.touched) {
+                <span class="error">Numéro invalide</span>
+              }
+            </div>
+          </div>
+          <div>
+            <button class="btn btn-primary" type="submit" [disabled]="info.pristine">
+              Enregistrer
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- 3. Véhicules -->
+      @if (auth.isDriver()) {
+        <section class="card" id="vehicules">
+          <div class="card-title">
+            <h2>Mes véhicules</h2>
+            <span class="muted small">{{ vehicles().length }} véhicule(s)</span>
+          </div>
+          <div class="vehicles">
+            @for (v of vehicles(); track v.id; let first = $first) {
+              <div class="vehicle">
+                <span class="plate">{{ v.plate }}</span>
+                <div class="grow">
+                  <b>{{ v.brand || 'Véhicule' }} {{ v.model }}</b>
+                  <span class="muted small"
+                    >{{ first ? 'Véhicule par défaut • ' : ''
+                    }}{{ v.reservations ?? 0 }} réservation(s)</span
+                  >
+                </div>
+                <button
+                  class="btn btn-ghost btn-icon"
+                  (click)="removeVehicle(v)"
+                  [attr.aria-label]="'Supprimer ' + v.plate"
+                >
+                  <app-icon name="trash" [size]="17" />
+                </button>
+              </div>
+            } @empty {
+              <p class="muted">Aucun véhicule : ajoutez-en un pour pouvoir réserver.</p>
+            }
+          </div>
+          <form class="add" [formGroup]="vForm" (ngSubmit)="addVehicle()">
+            <input
+              class="input"
+              formControlName="plate"
+              placeholder="Immatriculation (215 TU 4587)"
+              aria-label="Immatriculation"
+            />
+            <input class="input" formControlName="brand" placeholder="Marque" aria-label="Marque" />
+            <input class="input" formControlName="model" placeholder="Modèle" aria-label="Modèle" />
+            <button class="btn" type="submit"><app-icon name="plus" [size]="16" /> Ajouter</button>
+          </form>
+        </section>
+      }
+
+      <!-- 4. Préférences de notification -->
+      <section class="card" id="notifications">
+        <h2>Préférences de notification</h2>
+        <div class="prefs">
+          @if (auth.isManager()) {
+            <label class="switch"
+              ><input
+                type="checkbox"
+                [checked]="prefs()['confirm']"
+                (change)="setPref('confirm', $any($event.target).checked)"
+              /><span class="sl"></span>
+              <span
+                ><b>Nouvelles réservations à confirmer</b
+                ><span class="muted small">Alerte dès qu'une demande arrive</span></span
+              ></label
+            >
+          } @else {
+            <label class="switch"
+              ><input
+                type="checkbox"
+                [checked]="prefs()['confirm']"
+                (change)="setPref('confirm', $any($event.target).checked)"
+              /><span class="sl"></span>
+              <span
+                ><b>Confirmation de réservation</b
+                ><span class="muted small">Quand le gestionnaire confirme ou refuse</span></span
+              ></label
+            >
+            <label class="switch"
+              ><input
+                type="checkbox"
+                [checked]="prefs()['reminder']"
+                (change)="setPref('reminder', $any($event.target).checked)"
+              /><span class="sl"></span>
+              <span
+                ><b>Rappel avant l'arrivée</b
+                ><span class="muted small">1 heure avant le début du créneau</span></span
+              ></label
+            >
+            <label class="switch"
+              ><input
+                type="checkbox"
+                [checked]="prefs()['review']"
+                (change)="setPref('review', $any($event.target).checked)"
+              /><span class="sl"></span>
+              <span
+                ><b>Demande d'avis</b
+                ><span class="muted small">Après une réservation terminée</span></span
+              ></label
+            >
+          }
+          <label class="switch"
+            ><input
+              type="checkbox"
+              [checked]="prefs()['news']"
+              (change)="setPref('news', $any($event.target).checked)"
+            /><span class="sl"></span>
+            <span
+              ><b>Nouveautés ParkEasy</b
+              ><span class="muted small">Nouveaux parkings dans vos zones</span></span
+            ></label
+          >
+        </div>
+        <p class="muted small">Préférences enregistrées sur cet appareil.</p>
+      </section>
+
+      <!-- Sécurité -->
+      <section class="card" id="securite">
+        <h2>Sécurité</h2>
+        <form class="form" [formGroup]="pwd" (ngSubmit)="changePassword()">
+          <div class="form-row">
+            <div class="field">
+              <label for="cur">Mot de passe actuel</label
+              ><input
+                id="cur"
+                type="password"
+                class="input"
+                formControlName="current"
+                autocomplete="current-password"
+              />
+            </div>
+            <div class="field">
+              <label for="np">Nouveau mot de passe</label
+              ><input
+                id="np"
+                type="password"
+                class="input"
+                formControlName="password"
+                autocomplete="new-password"
+              />
+              <span class="hint">8 caractères minimum</span>
+            </div>
+          </div>
+          <div><button class="btn" type="submit">Modifier le mot de passe</button></div>
+        </form>
+      </section>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,38 @@
+<header class="pubbar">
+  <div class="container pubnav">
+    <app-brand />
+    <button
+      type="button"
+      class="btn btn-ghost btn-icon pub-burger"
+      (click)="open.set(!open())"
+      [attr.aria-expanded]="open()"
+      aria-controls="menu-public"
+      [attr.aria-label]="open() ? 'Fermer le menu' : 'Ouvrir le menu'"
+    >
+      <app-icon [name]="open() ? 'x' : 'menu'" />
+    </button>
+    <div class="pub-menu" id="menu-public" [class.open]="open()">
+      <nav class="links" aria-label="Navigation principale">
+        <a
+          routerLink="/"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+          [routerLinkActiveOptions]="{ exact: true }"
+          >Accueil</a
+        >
+        <a routerLink="/parkings" routerLinkActive="active" ariaCurrentWhenActive="page"
+          >Parkings</a
+        >
+        <a routerLink="/" fragment="comment">Comment ça marche</a>
+        <a routerLink="/aide" routerLinkActive="active" ariaCurrentWhenActive="page">Aide</a>
+        <a routerLink="/inscription" [queryParams]="{ profil: 'gestionnaire' }"
+          >Espace gestionnaire</a
+        >
+      </nav>
+      <div class="row">
+        <a routerLink="/connexion" class="btn btn-ghost btn-sm">Se connecter</a>
+        <a routerLink="/inscription" class="btn btn-primary btn-sm">Créer un compte</a>
+      </div>
+    </div>
+  </div>
+</header>

@@ -1,0 +1,170 @@
+<div class="page search-page">
+  <h1 class="sr-only">Rechercher et comparer les parkings</h1>
+  <!-- 1. Rappel de la recherche, modifiable -->
+  <div class="recap card">
+    @if (!editing()) {
+      <div class="row recap-items">
+        <span class="strong"><app-icon name="pin" [size]="16" /> {{ zoneLabel() }}</span>
+        <span><app-icon name="calendar" [size]="16" /> {{ state.date() | dateFr }}</span>
+        <span
+          ><app-icon name="clock" [size]="16" /> {{ state.start() }} → {{ state.end() }}
+          <span class="muted">({{ durationLabel() }})</span></span
+        >
+        @if (q()) {
+          <button class="badge badge-blue chip" (click)="clearQuery()">
+            « {{ q() }} » <app-icon name="x" [size]="12" />
+          </button>
+        }
+      </div>
+      <button class="btn btn-sm" (click)="editing.set(true)">
+        <app-icon name="edit" [size]="15" /> Modifier
+      </button>
+    } @else {
+      <app-search-form
+        variant="compact"
+        label="Mettre à jour"
+        [navigate]="false"
+        (searched)="onSearched()"
+      />
+    }
+  </div>
+
+  <div class="layout">
+    <!-- 2. Filtres -->
+    <aside class="filters card" [class.open]="showFilters()" aria-label="Filtres">
+      <div class="row-between">
+        <h2 class="h"><app-icon name="filter" [size]="16" /> Filtres</h2>
+        <button class="link" type="button" (click)="clearFilters()">Effacer</button>
+      </div>
+
+      <div class="block">
+        <label class="lbl" for="price">Prix maximum</label>
+        <input
+          id="price"
+          type="range"
+          min="1"
+          max="6"
+          step="0.5"
+          [ngModel]="maxPrice()"
+          (ngModelChange)="maxPrice.set(+$event)"
+        />
+        <div class="row-between small muted">
+          <span>1 TND</span
+          ><b class="val">{{ maxPrice() < 6 ? '≤ ' + maxPrice() + ' TND/h' : 'Tous les prix' }}</b
+          ><span>6 TND</span>
+        </div>
+      </div>
+
+      <div class="block">
+        <span class="lbl">Disponibilité</span>
+        <label class="check"
+          ><input
+            type="checkbox"
+            [ngModel]="onlyAvailable()"
+            (ngModelChange)="onlyAvailable.set($event)"
+          />
+          Places libres sur mon créneau</label
+        >
+      </div>
+
+      <div class="block">
+        <span class="lbl">Services</span>
+        @for (a of amenities(); track a.id) {
+          <label class="check">
+            <input
+              type="checkbox"
+              [checked]="selectedAmenities().includes(a.id)"
+              (change)="toggleAmenity(a.id, $any($event.target).checked)"
+            />
+            <app-icon [name]="amenityIcon(a.icon)" [size]="15" /> {{ a.label }}
+          </label>
+        }
+      </div>
+      <button class="btn btn-primary btn-block" (click)="apply()">Appliquer</button>
+    </aside>
+
+    <!-- 3. Carte interactive -->
+    <section class="map-wrap">
+      <!-- Objectif 04 : Leaflet (~150 kB) est chargé dans un bloc séparé, une fois la liste affichée (@defer) -->
+      @defer (on idle) {
+        <app-parking-map
+          [parkings]="results() ?? []"
+          [highlighted]="hovered()"
+          [position]="position()"
+          (selected)="scrollTo($event)"
+        />
+      } @placeholder {
+        <div class="map-placeholder" role="img" aria-label="Chargement de la carte"></div>
+      }
+      <button class="btn btn-sm locate" (click)="locate()">
+        <app-icon name="locate" [size]="15" /> Autour de moi
+      </button>
+    </section>
+
+    <!-- 4-5. Résultats comparables et tri -->
+    <section class="results" aria-live="polite">
+      <div class="row-between res-head">
+        <!-- Le compteur n'apparaît qu'une fois les résultats connus (pas de « 0 parking » pendant le chargement ou en cas d'erreur) -->
+        <strong>
+          @if (failed()) {
+            Recherche interrompue
+          } @else if (results(); as r) {
+            {{ r.length }} parking{{ r.length > 1 ? 's' : '' }} trouvé{{ r.length > 1 ? 's' : '' }}
+          } @else {
+            Recherche en cours…
+          }
+        </strong>
+        <div class="row">
+          <button class="btn btn-sm mobile-filters" (click)="showFilters.set(!showFilters())">
+            <app-icon name="filter" [size]="15" /> Filtres
+            @if (activeFilters()) {
+              ({{ activeFilters() }})
+            }
+          </button>
+          <label class="sr-only" for="sort">Trier</label>
+          <select id="sort" class="input sort" [ngModel]="sort()" (ngModelChange)="setSort($event)">
+            <option value="price">Trier : prix croissant</option>
+            <option value="rating">Trier : mieux notés</option>
+            <option value="places">Trier : places libres</option>
+            <option value="distance">Trier : distance</option>
+          </select>
+        </div>
+      </div>
+      @if (failed()) {
+        <app-error-state
+          title="La recherche n'a pas abouti"
+          text="Le serveur n'a pas répondu. Vérifiez votre connexion puis relancez la recherche."
+          (retry)="load()"
+        />
+      } @else if (!results()) {
+        <app-skeleton variant="row" [count]="4" label="Recherche des parkings disponibles…" />
+      } @else {
+        <div class="list" [class.dim]="loading()" [attr.aria-busy]="loading()">
+          @for (p of results(); track p.id) {
+            <app-parking-row
+              [attr.id]="'res-' + p.id"
+              [parking]="p"
+              [query]="navQuery()"
+              [active]="hovered() === p.id"
+              [showFavorite]="auth.isDriver()"
+              [favorite]="favorites().has(p.id)"
+              (hover)="hovered.set($event)"
+              (toggleFavorite)="toggleFavorite($event)"
+            />
+          } @empty {
+            <div class="card">
+              <app-empty
+                icon="search"
+                text="Aucun parking ne correspond à vos critères sur ce créneau."
+              >
+                <button class="btn btn-sm" (click)="clearFilters()">
+                  Effacer les filtres
+                </button></app-empty
+              >
+            </div>
+          }
+        </div>
+      }
+    </section>
+  </div>
+</div>

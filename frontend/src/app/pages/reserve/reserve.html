@@ -1,0 +1,307 @@
+<div class="page">
+  @if (done(); as r) {
+    <!-- Confirmation claire après l'envoi -->
+    <div class="success card">
+      <span class="ok"><app-icon name="check" [size]="30" [stroke]="2.5" /></span>
+      <h1>Demande envoyée !</h1>
+      <p class="muted">
+        Réservation <b>{{ r.reference }}</b> en attente de confirmation du gestionnaire.
+      </p>
+      <dl class="recap">
+        <div>
+          <dt>Parking</dt>
+          <dd>{{ r.parking }}</dd>
+        </div>
+        <div>
+          <dt>Place</dt>
+          <dd>{{ r.space_code }} • Niveau {{ r.level }}</dd>
+        </div>
+        <div>
+          <dt>Date</dt>
+          <dd>{{ r.start_at | dateFr: 'short' }}</dd>
+        </div>
+        <div>
+          <dt>Horaire</dt>
+          <dd>{{ r.start_at | hour }} – {{ r.end_at | hour }}</dd>
+        </div>
+        <div>
+          <dt>Véhicule</dt>
+          <dd>{{ r.plate }}</dd>
+        </div>
+        <div class="total">
+          <dt>Total</dt>
+          <dd>{{ r.amount | tnd: 2 }}</dd>
+        </div>
+      </dl>
+      <div class="row center-row">
+        <a
+          class="btn btn-primary"
+          target="_blank"
+          rel="noopener"
+          [href]="
+            'https://www.google.com/maps/dir/?api=1&destination=' + r.latitude + ',' + r.longitude
+          "
+        >
+          <app-icon name="navigation" [size]="16" /> Itinéraire</a
+        >
+        <a class="btn" routerLink="/mes-reservations">Voir mes réservations</a>
+      </div>
+    </div>
+  } @else if (error(); as e) {
+    <p class="alert alert-error">{{ e }}</p>
+  } @else if (parking(); as p) {
+    <div class="page-head">
+      <div>
+        <h1>Réservation — {{ p.name }}</h1>
+        <p>{{ p.address }}</p>
+      </div>
+      <a [routerLink]="['/parkings', p.id]" [queryParams]="state.toQuery()" class="btn btn-sm"
+        ><app-icon name="arrow-left" [size]="14" /> Retour au parking</a
+      >
+    </div>
+
+    <!-- 1. Étapes de la réservation -->
+    <ol class="steps card">
+      @for (s of ['Créneau', 'Place', 'Véhicule', 'Confirmation']; track s; let i = $index) {
+        <li [class.done]="step() > i + 1" [class.current]="step() === i + 1">
+          <span class="n">
+            @if (step() > i + 1) {
+              <app-icon name="check" [size]="13" [stroke]="3" />
+            } @else {
+              {{ i + 1 }}
+            }
+          </span>
+          {{ s }}
+        </li>
+      }
+    </ol>
+
+    <div class="layout">
+      <!-- 2. Créneau -->
+      <section class="card slot">
+        <h2>Votre créneau</h2>
+        <div class="field">
+          <label for="r-date">Date</label>
+          <div class="input-icon">
+            <app-icon name="calendar" [size]="16" />
+            <input
+              id="r-date"
+              type="date"
+              class="input"
+              [min]="today"
+              [ngModel]="state.date()"
+              (ngModelChange)="state.date.set($event)"
+            />
+          </div>
+        </div>
+        <div class="field">
+          <label for="r-start">Arrivée</label>
+          <div class="input-icon">
+            <app-icon name="clock" [size]="16" />
+            <input
+              id="r-start"
+              type="time"
+              step="900"
+              class="input"
+              [ngModel]="state.start()"
+              (ngModelChange)="state.start.set($event)"
+            />
+          </div>
+        </div>
+        <div class="field">
+          <label for="r-end">Départ</label>
+          <div class="input-icon">
+            <app-icon name="clock" [size]="16" />
+            <input
+              id="r-end"
+              type="time"
+              step="900"
+              class="input"
+              [ngModel]="state.end()"
+              (ngModelChange)="state.end.set($event)"
+            />
+          </div>
+        </div>
+        @if (state.valid()) {
+          <div class="duration">
+            Durée calculée : <b>{{ state.minutes() / 60 | number: '1.0-2' }} h</b>
+            @if (state.minutes() % 60) {
+              <span class="muted small">(facturé {{ state.billedHours() }} h entamées)</span>
+            }
+          </div>
+        } @else {
+          <p class="alert alert-error small">L'heure de départ doit être après l'arrivée.</p>
+        }
+        @if (!openOnSlot()) {
+          <p class="alert alert-warning small">
+            Ce parking est ouvert de {{ p.opening_time }} à {{ p.closing_time }} : ajustez votre
+            créneau.
+          </p>
+        }
+      </section>
+
+      <!-- 3. Plan interactif -->
+      <section class="card plan">
+        <div class="row-between plan-head">
+          <h2>Choisissez votre place</h2>
+          <div class="segmented" role="tablist" aria-label="Niveau">
+            @for (l of p.levels; track l) {
+              <button
+                role="tab"
+                [class.on]="level() === l"
+                [attr.aria-selected]="level() === l"
+                (click)="level.set(l)"
+              >
+                {{ l === 'RDC' ? 'RDC' : 'Niveau ' + l }}
+              </button>
+            }
+          </div>
+        </div>
+        <div class="lot">
+          <span class="entry">ENTRÉE →</span>
+          <div class="spaces" role="listbox" aria-label="Places du niveau">
+            @for (s of levelSpaces(); track s.id) {
+              <button
+                type="button"
+                class="space"
+                role="option"
+                [attr.aria-selected]="selected()?.id === s.id"
+                [class]="'space ' + s.availability"
+                [class.sel]="selected()?.id === s.id"
+                [disabled]="s.availability !== 'free'"
+                (click)="pick(s)"
+                [attr.aria-label]="
+                  'Place ' +
+                  s.code +
+                  ' — ' +
+                  typeLabel[s.type] +
+                  ' — ' +
+                  (s.availability === 'free'
+                    ? 'libre'
+                    : s.availability === 'reserved'
+                      ? 'réservée'
+                      : 'hors service')
+                "
+              >
+                @if (s.type === 'pmr') {
+                  <app-icon name="accessible" [size]="14" />
+                }
+                @if (s.type === 'electric') {
+                  <app-icon name="bolt" [size]="14" />
+                }
+                @if (s.type === 'moto') {
+                  <app-icon name="moto" [size]="14" />
+                }
+                <span>{{ s.code }}</span>
+              </button>
+            }
+          </div>
+        </div>
+        <div class="legend small">
+          <span><i class="lg free"></i> Libre</span
+          ><span><i class="lg reserved"></i> Réservée</span>
+          <span><i class="lg sel"></i> Sélectionnée</span
+          ><span><i class="lg oos"></i> Hors service</span>
+          <span><app-icon name="accessible" [size]="13" /> PMR</span
+          ><span><app-icon name="bolt" [size]="13" /> Borne électrique</span>
+          <span><app-icon name="moto" [size]="13" /> Moto</span>
+        </div>
+        <p class="muted small">
+          {{ freeCount() }} place(s) libre(s) sur ce créneau, tous niveaux confondus.
+        </p>
+      </section>
+
+      <!-- 4. Récapitulatif en direct -->
+      <aside class="card recap-box">
+        <h2>Récapitulatif</h2>
+        <div class="park">
+          <div
+            class="mini"
+            [style.background-image]="'url(' + (p.photo || '/img/parking-1.svg') + ')'"
+          ></div>
+          <div>
+            <b>{{ p.name }}</b><span class="muted small">{{
+              selected() ? 'Niveau ' + selected()!.level : 'Aucune place choisie'
+            }}</span>
+          </div>
+        </div>
+        <dl>
+          <div>
+            <dt><app-icon name="parking" [size]="15" /> Place</dt>
+            <dd>{{ selected()?.code ?? '—' }}</dd>
+          </div>
+          <div>
+            <dt><app-icon name="calendar" [size]="15" /> Date</dt>
+            <dd>{{ state.date() | dateFr: 'short' }}</dd>
+          </div>
+          <div>
+            <dt><app-icon name="clock" [size]="15" /> Horaire</dt>
+            <dd>{{ state.start() }} – {{ state.end() }}</dd>
+          </div>
+          <!-- 5. Choix du véhicule -->
+          <div class="veh">
+            <dt><app-icon name="car" [size]="15" /> Véhicule</dt>
+            <dd>
+              @if (vehicles()?.length) {
+                <select
+                  class="input"
+                  aria-label="Véhicule"
+                  [ngModel]="vehicleId()"
+                  (ngModelChange)="vehicleId.set(+$event)"
+                >
+                  @for (v of vehicles(); track v.id) {
+                    <option [ngValue]="v.id">
+                      {{ v.plate }}{{ v.model ? ' • ' + v.model : '' }}
+                    </option>
+                  }
+                </select>
+              }
+            </dd>
+          </div>
+          <div>
+            <dt><app-icon name="tag" [size]="15" /> Tarif</dt>
+            <dd>{{ p.hourly_rate | tnd }} × {{ state.billedHours() }} h</dd>
+          </div>
+        </dl>
+        @if ((vehicles() && !vehicles()!.length) || addingVehicle()) {
+          <div class="add-veh">
+            <p class="small strong">Ajoutez votre véhicule</p>
+            <input
+              class="input"
+              placeholder="Immatriculation (ex. 215 TU 4587)"
+              [(ngModel)]="newPlate"
+              aria-label="Immatriculation"
+            />
+            <input
+              class="input"
+              placeholder="Marque (facultatif)"
+              [(ngModel)]="newBrand"
+              aria-label="Marque"
+            />
+            <button class="btn btn-sm" (click)="addVehicle()">Ajouter</button>
+          </div>
+        } @else {
+          <button class="link small" (click)="addingVehicle.set(true)">
+            + Ajouter un véhicule
+          </button>
+        }
+        <div class="total row-between">
+          <span>Total</span><b>{{ total() | tnd: 2 }}</b>
+        </div>
+        <!-- 6. Confirmation -->
+        <button
+          class="btn btn-primary btn-block btn-lg"
+          (click)="confirm()"
+          [disabled]="step() < 4 || sending() || !openOnSlot()"
+        >
+          {{ sending() ? 'Envoi…' : 'Confirmer la réservation' }}
+        </button>
+        <p class="muted small center">
+          Paiement sur place • annulation gratuite jusqu'à l'heure d'arrivée
+        </p>
+      </aside>
+    </div>
+  } @else {
+    <app-skeleton variant="card" [count]="2" label="Chargement du plan des places…" />
+  }
+</div>

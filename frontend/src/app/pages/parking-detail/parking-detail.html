@@ -1,0 +1,211 @@
+<div class="page">
+  <a routerLink="/parkings" [queryParams]="state.toQuery()" class="back small strong"
+    ><app-icon name="arrow-left" [size]="14" /> Retour aux résultats</a
+  >
+
+  @if (error(); as e) {
+    <div class="card">
+      <app-empty icon="search" [text]="e"
+        ><a routerLink="/parkings" class="btn btn-sm">Rechercher un parking</a></app-empty
+      >
+    </div>
+  } @else if (failed()) {
+    <app-error-state title="La fiche du parking n'a pas pu être chargée" (retry)="retry()" />
+  } @else if (parking(); as p) {
+    @if (p.status !== 'active') {
+      <p class="alert alert-warning">
+        <app-icon name="alert" [size]="18" /> Ce parking n'est pas encore publié (statut :
+        {{ p.status === 'pending' ? 'en attente de validation' : 'suspendu' }}). Seuls son
+        gestionnaire et l'administrateur le voient.
+      </p>
+    }
+    <div class="layout">
+      <div class="main">
+        <!-- 1. Galerie photos -->
+        <div class="gallery" [class.single]="p.photos.length < 2">
+          <div
+            class="big"
+            [style.background-image]="
+              'url(' + (p.photos[photo()]?.url || '/img/parking-1.svg') + ')'
+            "
+            role="img"
+            [attr.aria-label]="'Photo de ' + p.name"
+          ></div>
+          @if (p.photos.length > 1) {
+            <div class="thumbs">
+              @for (ph of p.photos.slice(0, 3); track ph.id; let i = $index) {
+                <button
+                  type="button"
+                  class="thumb"
+                  [class.on]="photo() === i"
+                  (click)="photo.set(i)"
+                  [style.background-image]="'url(' + ph.url + ')'"
+                  [attr.aria-label]="'Photo ' + (i + 1)"
+                >
+                  @if (i === 2 && p.photos.length > 3) {
+                    <span>+{{ p.photos.length - 3 }} photos</span>
+                  }
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- 2. Nom, adresse, note, favoris -->
+        <div class="title row-between">
+          <div>
+            <h1>{{ p.name }}</h1>
+            <p class="muted addr">
+              <app-icon name="pin" [size]="15" /> {{ p.address }}
+              @if (p.rating) {
+                · <app-stars [value]="p.rating" [size]="13" /> <b>{{ p.rating }}</b> ({{
+                  p.reviews
+                }}
+                avis)
+              }
+            </p>
+          </div>
+          @if (!auth.isManager() && !auth.isAdmin()) {
+            <button
+              class="btn btn-icon fav"
+              [class.on]="p.is_favorite"
+              (click)="toggleFavorite()"
+              [attr.aria-pressed]="p.is_favorite"
+              [attr.aria-label]="p.is_favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+            >
+              <app-icon name="heart" [size]="20" [filled]="p.is_favorite" />
+            </button>
+          }
+        </div>
+
+        <!-- 3. Tarif, places libres, horaires, capacité -->
+        <div class="chips">
+          <span class="chip"
+            ><app-icon name="tag" [size]="15" /> <b>{{ p.hourly_rate | tnd }}</b> / heure</span
+          >
+          <span class="chip green"
+            ><app-icon name="car" [size]="15" /> <b>{{ p.free_spaces }}</b> places libres</span
+          >
+          <span class="chip"><app-icon name="clock" [size]="15" /> {{ hoursLabel() }}</span>
+          <span class="chip"><app-icon name="layers" [size]="15" /> {{ levelsLabel() }}</span>
+        </div>
+        @if (p.description) {
+          <p class="desc">{{ p.description }}</p>
+        }
+
+        <!-- 4. Équipements -->
+        <h2>Services disponibles</h2>
+        <div class="services">
+          @for (a of p.amenities_list; track a.id) {
+            <div class="service">
+              <app-icon [name]="amenityIcon(a.icon)" [size]="20" /><span>{{ a.label }}</span>
+            </div>
+          } @empty {
+            <p class="muted">Aucun service renseigné.</p>
+          }
+        </div>
+
+        <!-- 5. Avis vérifiés -->
+        <h2>Avis des utilisateurs</h2>
+        <div class="reviews">
+          @for (r of p.latest_reviews; track r.id) {
+            <div class="review card">
+              <div class="row">
+                <strong>{{ r.first_name }} {{ r.last_initial }}.</strong>
+                <app-stars [value]="r.rating" [size]="13" />
+              </div>
+              @if (r.comment) {
+                <p>{{ r.comment }}</p>
+              }
+              <span class="muted small"
+                >{{ r.created_at | dateFr: 'short' }} • réservation vérifiée</span
+              >
+            </div>
+          } @empty {
+            <p class="muted">Pas encore d'avis : soyez le premier après votre réservation !</p>
+          }
+        </div>
+      </div>
+
+      <!-- 6. Encadré de réservation -->
+      <aside class="book card" aria-label="Réserver une place">
+        <h2>Réserver une place</h2>
+        <div class="field">
+          <label for="d-date">Date</label>
+          <div class="input-icon">
+            <app-icon name="calendar" [size]="16" />
+            <input
+              id="d-date"
+              type="date"
+              class="input"
+              [min]="today"
+              [ngModel]="state.date()"
+              (ngModelChange)="state.date.set($event)"
+            />
+          </div>
+        </div>
+        <div class="form-row two">
+          <div class="field">
+            <label for="d-start">Arrivée</label>
+            <input
+              id="d-start"
+              type="time"
+              step="900"
+              class="input"
+              [ngModel]="state.start()"
+              (ngModelChange)="state.start.set($event)"
+            />
+          </div>
+          <div class="field">
+            <label for="d-end">Départ</label>
+            <input
+              id="d-end"
+              type="time"
+              step="900"
+              class="input"
+              [ngModel]="state.end()"
+              (ngModelChange)="state.end.set($event)"
+            />
+          </div>
+        </div>
+        <div class="calc">
+          @if (state.valid()) {
+            <div class="row-between">
+              <span class="muted">{{ p.hourly_rate | tnd }} × {{ state.billedHours() }} h</span
+              ><b>{{ p.estimated_total | tnd: 2 }}</b>
+            </div>
+            <app-free [free]="p.free_spaces" [closed]="!p.open_on_slot" />
+          } @else {
+            <span class="error small">L'heure de départ doit être après l'arrivée.</span>
+          }
+        </div>
+        @if (auth.isManager() || auth.isAdmin()) {
+          <p class="muted small">La réservation est réservée aux comptes automobilistes.</p>
+        } @else {
+          <button
+            class="btn btn-primary btn-block btn-lg"
+            (click)="reserve()"
+            [disabled]="
+              !state.valid() || p.free_spaces === 0 || !p.open_on_slot || p.status !== 'active'
+            "
+          >
+            Réserver une place
+          </button>
+          <p class="muted small center">Paiement sur place · annulation gratuite avant l'arrivée</p>
+        }
+        <a
+          class="btn btn-ghost btn-sm"
+          target="_blank"
+          rel="noopener"
+          [href]="
+            'https://www.google.com/maps/dir/?api=1&destination=' + p.latitude + ',' + p.longitude
+          "
+        >
+          <app-icon name="navigation" [size]="15" /> Itinéraire
+        </a>
+      </aside>
+    </div>
+  } @else {
+    <app-skeleton variant="card" [count]="2" label="Chargement de la fiche du parking…" />
+  }
+</div>

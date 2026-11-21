@@ -1,0 +1,20 @@
+{
+  "name": "parkeasy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ParkEasy — recherche, comparaison et réservation de places de parking (Angular + Express + PostgreSQL)",
+  "scripts": {
+    "setup": "node -e \"require('fs').existsSync('backend/.env')||require('fs').copyFileSync('backend/.env.example','backend/.env')\" && npm install && npm install --prefix backend && npm install --prefix frontend",
+    "start": "concurrently -k -n API,WEB -c red,blue \"npm start --prefix backend\" \"npm run serve --prefix frontend\"",
+    "prod": "npm run build && npm run start:prod --prefix backend",
+    "test": "npm test --prefix backend",
+    "test:front": "npm test --prefix frontend -- --watch=false --browsers=ChromeHeadless",
+    "lint": "npm run lint --prefix backend && npm run lint --prefix frontend",
+    "format": "npm run format --prefix frontend",
+    "reset-db": "npm run reset-db --prefix backend",
+    "build": "npm run build --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0"
+  }
+}

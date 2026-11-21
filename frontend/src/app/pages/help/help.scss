@@ -1,0 +1,151 @@
+.help {
+  padding-top: 1.75rem;
+  padding-bottom: 3rem;
+}
+.intro {
+  max-width: 640px;
+  margin-bottom: 1.5rem;
+  p {
+    color: var(--text-2);
+  }
+}
+.layout {
+  display: grid;
+  gap: 1.75rem;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  align-items: start;
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.group {
+  margin-bottom: 1.5rem;
+}
+h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  margin-bottom: 0.6rem;
+  app-icon {
+    color: var(--blue);
+  }
+}
+
+/* Accordéon natif <details> : accessible au clavier et aux lecteurs d'écran sans script */
+.qa {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.5rem;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+  &[open] {
+    border-color: var(--blue-100);
+    box-shadow: var(--shadow);
+  }
+  summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    font-weight: 600;
+    list-style: none;
+    min-height: 48px;
+    border-radius: inherit;
+    &::-webkit-details-marker {
+      display: none;
+    }
+    &:hover {
+      color: var(--blue);
+    }
+    app-icon {
+      flex-shrink: 0;
+      transition: transform 0.2s;
+      color: var(--text-2);
+    }
+  }
+  &[open] summary app-icon {
+    transform: rotate(180deg);
+  }
+  .answer {
+    padding: 0 1rem 1rem;
+    color: var(--text-2);
+    animation: reveal 0.2s ease-out;
+    p {
+      margin-bottom: 0.4rem;
+    }
+  }
+}
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.contact {
+  position: sticky;
+  top: 84px;
+  h2 {
+    margin-bottom: 1rem;
+  }
+}
+@media (max-width: 900px) {
+  .contact {
+    position: static;
+  }
+}
+.direct {
+  margin: 1rem 0 0;
+  color: var(--text-2);
+  border-top: 1px solid var(--border);
+  padding-top: 0.8rem;
+}
+.done {
+  text-align: center;
+  padding: 1rem 0;
+  h3 {
+    justify-content: center;
+  }
+  p {
+    color: var(--text-2);
+  }
+}
+.ok {
+  display: inline-grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--green-bg);
+  color: var(--green);
+  margin-bottom: 0.5rem;
+  animation: pop 0.3s ease-out;
+}
+@keyframes pop {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}
+.spin {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgb(255 255 255 / 40%);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: rot 0.7s linear infinite;
+}
+@keyframes rot {
+  to {
+    transform: rotate(360deg);
+  }
+}
+[aria-invalid='true'] {
+  border-color: var(--red);
+}

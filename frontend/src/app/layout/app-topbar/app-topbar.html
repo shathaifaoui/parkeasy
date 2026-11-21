@@ -1,0 +1,89 @@
+<header class="topbar">
+  <button
+    type="button"
+    class="btn btn-ghost btn-icon burger"
+    (click)="menuToggle.emit(); $event.stopPropagation()"
+    aria-label="Ouvrir le menu"
+  >
+    <app-icon name="menu" />
+  </button>
+  <form class="top-search input-icon" (submit)="search($event, q)" role="search">
+    <app-icon name="search" [size]="16" />
+    <input
+      #q
+      class="input"
+      name="q"
+      type="search"
+      [placeholder]="searchPlaceholder()"
+      aria-label="Rechercher"
+    />
+  </form>
+  <span class="spacer"></span>
+
+  <div class="bell-wrap">
+    <button
+      type="button"
+      class="btn btn-ghost btn-icon bell"
+      (click)="bellOpen.set(!bellOpen())"
+      [attr.aria-expanded]="bellOpen()"
+      aria-controls="panneau-notifications"
+      [attr.aria-label]="
+        notifs().count ? 'Notifications, ' + notifs().count + ' nouvelle(s)' : 'Notifications'
+      "
+    >
+      <app-icon name="bell" />
+      @if (notifs().count) {
+        <span class="dot" aria-hidden="true">{{ notifs().count }}</span>
+      }
+    </button>
+    @if (bellOpen()) {
+      <div class="dropdown notifs card" id="panneau-notifications">
+        <strong>Notifications</strong>
+        @for (n of notifs().items; track $index) {
+          <a [routerLink]="n.link" class="notif" (click)="closeMenus()">
+            <span [class]="'nd nd-' + n.type" aria-hidden="true"></span>
+            <span
+              ><span class="small">{{ n.text }}</span
+              ><span class="small d">{{ n.date | dateFr: 'datetime' }}</span></span
+            >
+          </a>
+        } @empty {
+          <p class="small empty">Aucune notification pour le moment.</p>
+        }
+      </div>
+    }
+  </div>
+
+  @if (auth.user(); as u) {
+    <div class="user-wrap">
+      <button
+        type="button"
+        class="user"
+        (click)="userOpen.set(!userOpen())"
+        [attr.aria-expanded]="userOpen()"
+        aria-controls="menu-compte"
+        [attr.aria-label]="'Compte de ' + u.first_name + ' ' + u.last_name"
+      >
+        <span class="avatar" aria-hidden="true">{{ initials() }}</span>
+        <span class="who"
+          ><b>{{ u.first_name }} {{ u.last_name }}</b
+          ><span>{{ roleLabel() }}</span></span
+        >
+        <app-icon name="chevron-down" [size]="16" />
+      </button>
+      @if (userOpen()) {
+        <div class="dropdown card" id="menu-compte">
+          <a routerLink="/profil" class="item" (click)="closeMenus()"
+            ><app-icon name="user" [size]="16" /> Mon profil</a
+          >
+          <a routerLink="/aide" class="item" (click)="closeMenus()"
+            ><app-icon name="info" [size]="16" /> Aide et contact</a
+          >
+          <button type="button" class="item" (click)="logout()">
+            <app-icon name="logout" [size]="16" /> Se déconnecter
+          </button>
+        </div>
+      }
+    </div>
+  }
+</header>

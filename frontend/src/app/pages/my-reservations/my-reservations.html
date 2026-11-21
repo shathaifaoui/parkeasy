@@ -1,0 +1,178 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Mes réservations</h1>
+      <p>Suivez vos demandes, annulez avant l'arrivée et donnez votre avis après votre passage.</p>
+    </div>
+    <a routerLink="/parkings" class="btn btn-primary"
+      ><app-icon name="plus" [size]="16" /> Nouvelle réservation</a
+    >
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="Filtrer mes réservations">
+    @for (t of tabs; track t.v) {
+      <button
+        type="button"
+        role="tab"
+        [id]="'tab-' + t.v"
+        aria-controls="panneau-reservations"
+        [class.on]="tab() === t.v"
+        [attr.aria-selected]="tab() === t.v"
+        [attr.tabindex]="tab() === t.v ? 0 : -1"
+        (click)="select(t.v)"
+        (keydown)="onTabKey($event)"
+      >
+        {{ t.label }} <span class="n">{{ counts()[t.v] || 0 }}</span>
+      </button>
+    }
+  </div>
+
+  <div id="panneau-reservations" role="tabpanel" [attr.aria-labelledby]="'tab-' + tab()">
+    @if (failed()) {
+      <app-error-state title="Vos réservations n'ont pas pu être chargées" (retry)="load()" />
+    } @else if (list(); as items) {
+      <div class="stack fade-in">
+        @for (r of items; track r.id) {
+          <article class="res card" [class]="'res card st-' + r.status">
+            <div
+              class="photo"
+              [style.background-image]="'url(' + (r.photo || '/img/parking-1.svg') + ')'"
+            ></div>
+            <div class="info">
+              <div class="row top">
+                <app-status [status]="r.status" />
+                @if (isOngoing(r)) {
+                  <span class="badge badge-blue">En cours</span>
+                }
+                <span class="muted small">{{ r.reference }}</span>
+              </div>
+              <h2>
+                <a [routerLink]="['/parkings', r.parking_id]">{{ r.parking }}</a>
+              </h2>
+              <p class="muted small addr"><app-icon name="pin" [size]="13" /> {{ r.address }}</p>
+              <ul class="facts">
+                <li><app-icon name="calendar" [size]="15" /> {{ r.start_at | dateFr }}</li>
+                <li>
+                  <app-icon name="clock" [size]="15" /> {{ r.start_at | hour }} –
+                  {{ r.end_at | hour }}
+                  <span class="muted">({{ r.start_at | duration: r.end_at }})</span>
+                </li>
+                <li>
+                  <app-icon name="parking" [size]="15" /> Place {{ r.space_code }} • niveau
+                  {{ r.level }}
+                </li>
+                <li><app-icon name="car" [size]="15" /> {{ r.plate }}</li>
+              </ul>
+              @if (r.status === 'pending') {
+                <p class="hint small">
+                  <app-icon name="info" [size]="14" /> En attente de confirmation par le
+                  gestionnaire du parking.
+                </p>
+              }
+              @if (r.review_rating) {
+                <p class="small given">
+                  <app-stars [value]="r.review_rating" [size]="13" /> Votre avis
+                  @if (r.review_comment) {
+                    : « {{ r.review_comment }} »
+                  }
+                </p>
+              }
+            </div>
+            <div class="side">
+              <strong class="amount">{{ r.amount | tnd: 2 }}</strong>
+              <div class="actions">
+                @if (r.status === 'pending' || r.status === 'confirmed') {
+                  <a class="btn btn-sm" target="_blank" rel="noopener" [href]="directions(r)"
+                    ><app-icon name="navigation" [size]="14" /> Itinéraire</a
+                  >
+                }
+                @if (canCancel(r)) {
+                  <button class="btn btn-sm btn-danger" (click)="cancelling.set(r)">
+                    <app-icon name="x" [size]="14" /> Annuler
+                  </button>
+                }
+                @if (r.status === 'completed' && !r.review_rating) {
+                  <button class="btn btn-sm btn-primary" (click)="openReview(r)">
+                    <app-icon name="star" [size]="14" /> Donner mon avis
+                  </button>
+                }
+                @if (r.status === 'completed' || r.status === 'cancelled') {
+                  <a class="btn btn-sm btn-ghost" [routerLink]="['/parkings', r.parking_id]"
+                    >Réserver à nouveau</a
+                  >
+                }
+              </div>
+            </div>
+          </article>
+        } @empty {
+          <div class="card">
+            <app-empty
+              icon="list"
+              [text]="
+                tab() === 'upcoming'
+                  ? 'Aucune réservation à venir.'
+                  : tab() === 'past'
+                    ? 'Aucune réservation passée.'
+                    : 'Aucune réservation annulée.'
+              "
+            >
+              <a routerLink="/parkings" class="btn btn-sm btn-primary">Rechercher une place</a>
+            </app-empty>
+          </div>
+        }
+      </div>
+    } @else {
+      <app-skeleton variant="row" [count]="3" label="Chargement de vos réservations…" />
+    }
+  </div>
+</div>
+
+@if (cancelling(); as r) {
+  <app-modal title="Annuler la réservation ?" (closed)="cancelling.set(null)">
+    <p>
+      Voulez-vous annuler <b>{{ r.reference }}</b> — {{ r.parking }}, le
+      {{ r.start_at | dateFr }} de {{ r.start_at | hour }} à {{ r.end_at | hour }} ?
+    </p>
+    <p class="muted small">
+      La place {{ r.space_code }} redeviendra immédiatement disponible pour les autres
+      automobilistes.
+    </p>
+    <div class="row end">
+      <button class="btn" (click)="cancelling.set(null)">Garder ma réservation</button>
+      <button class="btn btn-danger" (click)="confirmCancel()">Oui, annuler</button>
+    </div>
+  </app-modal>
+}
+
+@if (reviewing(); as r) {
+  <app-modal [title]="'Votre avis sur ' + r.parking" (closed)="reviewing.set(null)">
+    <div class="form">
+      <div class="field">
+        <span class="label">Note</span>
+        <app-stars
+          [value]="rating()"
+          [size]="30"
+          [interactive]="true"
+          (rate)="rating.set($event)"
+        />
+      </div>
+      <div class="field">
+        <label for="rv-comment">Commentaire (facultatif)</label>
+        <textarea
+          id="rv-comment"
+          class="input"
+          maxlength="500"
+          [(ngModel)]="comment"
+          placeholder="Accès, propreté, sécurité…"
+        ></textarea>
+        <span class="hint"
+          >{{ comment.length }}/500 — votre avis sera publié comme « réservation vérifiée ».</span
+        >
+      </div>
+      <div class="row end">
+        <button class="btn" (click)="reviewing.set(null)">Annuler</button>
+        <button class="btn btn-primary" (click)="sendReview()">Publier mon avis</button>
+      </div>
+    </div>
+  </app-modal>
+}

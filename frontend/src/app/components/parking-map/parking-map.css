@@ -1,0 +1,39 @@
+app-parking-map {
+  display: block;
+  height: 100%;
+}
+app-parking-map .map {
+  height: 100%;
+  min-height: 240px;
+  border-radius: 14px;
+  z-index: 0;
+}
+
+/* Carte Leaflet : repères avec le tarif */
+.price-marker {
+  background: #fff;
+  border: 2px solid var(--blue);
+  color: var(--blue);
+  font-weight: 800;
+  font-size: 12px;
+  border-radius: 10px;
+  padding: 2px 7px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgb(16 41 74 / 20%);
+  transform: translate(-50%, -50%);
+  width: max-content;
+  font-family: var(--font);
+}
+.price-marker.on {
+  background: var(--blue);
+  color: #fff;
+  transform: translate(-50%, -50%) scale(1.15);
+}
+.price-marker.full {
+  border-color: #9aa6b8;
+  color: #56657a;
+}
+.leaflet-div-icon {
+  background: transparent;
+  border: 0;
+}

@@ -1,0 +1,25 @@
+<a class="skip" href="#contenu">Aller au contenu</a>
+<p class="sr-only" aria-live="polite" aria-atomic="true">{{ announcement() }}</p>
+
+@if (auth.isLoggedIn()) {
+  <!-- Espaces connectés : menu latéral fixe (tiroir sur tablette et mobile) -->
+  <app-sidebar
+    [open]="drawerOpen()"
+    [hidden]="compact() && !drawerOpen()"
+    (closed)="drawerOpen.set(false)"
+  />
+  <div class="main">
+    <app-topbar (menuToggle)="drawerOpen.set(true)" />
+    <main id="contenu" tabindex="-1"><router-outlet /></main>
+  </div>
+  @if (auth.isDriver()) {
+    <app-mobile-tabbar />
+  }
+} @else {
+  <!-- Visiteur : barre de navigation horizontale + pied de page -->
+  <app-public-header />
+  <main id="contenu" class="pub-main" tabindex="-1"><router-outlet /></main>
+  <app-public-footer />
+}
+
+<app-toast-outlet />

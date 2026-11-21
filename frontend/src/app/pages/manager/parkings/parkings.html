@@ -1,0 +1,405 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Parkings & places</h1>
+      <p>Publiez vos parkings, mettez à jour les informations et l'état des places.</p>
+    </div>
+    <button class="btn btn-primary" (click)="startCreate()">
+      <app-icon name="plus" [size]="16" /> Ajouter un parking
+    </button>
+  </div>
+
+  @if (list(); as parkings) {
+    @if (!parkings.length) {
+      <div class="card">
+        <app-empty icon="building" text="Vous n'avez pas encore de parking.">
+          <button class="btn btn-primary btn-sm" (click)="startCreate()">
+            Ajouter mon premier parking
+          </button></app-empty
+        >
+      </div>
+    } @else {
+      <!-- 1. Choix du parking et statut de publication -->
+      <div class="picker" role="tablist">
+        @for (p of parkings; track p.id) {
+          <button
+            role="tab"
+            [class.on]="current()?.id === p.id"
+            [attr.aria-selected]="current()?.id === p.id"
+            (click)="select(p.id)"
+          >
+            {{ p.name }} <app-status [status]="p.status" />
+          </button>
+        }
+      </div>
+
+      @if (current(); as p) {
+        @if (p.status === 'pending') {
+          <p class="alert alert-warning">
+            <app-icon name="info" [size]="18" /> Ce parking est en attente de validation par
+            l'administrateur : il n'est pas encore visible des automobilistes.
+          </p>
+        } @else if (p.status === 'suspended') {
+          <p class="alert alert-error">
+            <app-icon name="ban" [size]="18" /> Ce parking a été suspendu par l'administrateur.
+          </p>
+        }
+        <div class="layout">
+          <div class="stack">
+            <!-- 2. Informations, modifiables -->
+            <section class="card">
+              <div class="card-title">
+                <h2>Informations</h2>
+                @if (!editing()) {
+                  <button class="btn btn-sm" (click)="startEdit()">
+                    <app-icon name="edit" [size]="14" /> Modifier
+                  </button>
+                }
+              </div>
+              @if (!editing()) {
+                <dl class="info">
+                  <div>
+                    <dt>Adresse</dt>
+                    <dd>{{ p.address }}</dd>
+                  </div>
+                  <div>
+                    <dt>Zone</dt>
+                    <dd>{{ p.zone }}, {{ p.city }}</dd>
+                  </div>
+                  <div>
+                    <dt>Tarif horaire</dt>
+                    <dd>{{ p.hourly_rate | tnd }}</dd>
+                  </div>
+                  <div>
+                    <dt>Horaires</dt>
+                    <dd>
+                      {{ p.open_24h ? '24h/24 — 7j/7' : p.opening_time + ' – ' + p.closing_time }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Capacité</dt>
+                    <dd>
+                      {{ p.spaces.length }} places • {{ p.levels.length }} niveau{{
+                        p.levels.length > 1 ? 'x' : ''
+                      }}
+                    </dd>
+                  </div>
+                </dl>
+                <!-- 3. Équipements -->
+                <span class="lbl">Équipements</span>
+                <div class="chips">
+                  @for (a of amenityLabels(); track a.id) {
+                    <span class="chip"
+                      ><app-icon [name]="amenityIcon(a.icon)" [size]="14" /> {{ a.label }}</span
+                    >
+                  } @empty {
+                    <span class="muted small">Aucun équipement</span>
+                  }
+                </div>
+              } @else {
+                <ng-container *ngTemplateOutlet="parkingForm" />
+                <div class="row end">
+                  <button class="btn" (click)="editing.set(false)">Annuler</button>
+                  <button class="btn btn-primary" (click)="save()">Enregistrer</button>
+                </div>
+              }
+              <span class="lbl">Photos</span>
+              <div class="photos">
+                @for (ph of p.photos; track ph.id) {
+                  <div class="ph" [style.background-image]="'url(' + ph.url + ')'">
+                    <button (click)="removePhoto(ph.id)" aria-label="Supprimer la photo">
+                      <app-icon name="x" [size]="12" />
+                    </button>
+                  </div>
+                }
+                <button
+                  class="ph add"
+                  (click)="addingPhoto.set(true)"
+                  aria-label="Ajouter une photo"
+                >
+                  <app-icon name="plus" />
+                </button>
+              </div>
+              @if (p.status === 'active') {
+                <a [routerLink]="['/parkings', p.id]" class="small strong view"
+                  >Voir la fiche publique →</a
+                >
+              }
+            </section>
+          </div>
+
+          <!-- 4. Plan des places et état en temps réel -->
+          <section class="card plan">
+            <div class="card-title wrap">
+              <h2>Plan des places — {{ level() === 'RDC' ? 'RDC' : 'Niveau ' + level() }}</h2>
+              <div class="row">
+                <div class="segmented">
+                  @for (l of p.levels; track l) {
+                    <button [class.on]="level() === l" (click)="level.set(l); selected.set(null)">
+                      {{ l }}
+                    </button>
+                  }
+                </div>
+                <button class="btn btn-sm" (click)="openAddSpaces()">
+                  <app-icon name="plus" [size]="14" /> Ajouter des places
+                </button>
+              </div>
+            </div>
+            <div class="spaces">
+              @for (s of levelSpaces(); track s.id) {
+                <button
+                  type="button"
+                  class="space"
+                  [class]="'space ' + s.live_state"
+                  [class.sel]="selected()?.id === s.id"
+                  (click)="pick(s)"
+                  [attr.aria-pressed]="selected()?.id === s.id"
+                  [attr.aria-label]="s.code + ' — ' + liveLabel[s.live_state]"
+                >
+                  <b>{{ s.code }}</b><span>{{ liveLabel[s.live_state] }}</span>
+                  @if (s.type !== 'standard') {
+                    <i class="type" [title]="typeLabel[s.type]">
+                      <app-icon
+                        [name]="
+                          s.type === 'pmr' ? 'accessible' : s.type === 'electric' ? 'bolt' : 'moto'
+                        "
+                        [size]="11"
+                    /></i>
+                  }
+                </button>
+              } @empty {
+                <p class="muted">Aucune place à ce niveau.</p>
+              }
+            </div>
+            <div class="foot">
+              <div class="legend small">
+                <span><i class="lg free"></i> Libre {{ counts().free }}</span>
+                <span><i class="lg reserved"></i> Réservée {{ counts().reserved }}</span>
+                <span><i class="lg occupied"></i> Occupée {{ counts().occupied }}</span>
+                <span><i class="lg oos"></i> Hors service {{ counts().out_of_service }}</span>
+              </div>
+              <!-- 5. Mise hors service / remise en service -->
+              @if (selected(); as s) {
+                <div class="selbar">
+                  <span class="small"
+                    ><b>{{ s.code }}</b> sélectionnée · {{ typeLabel[s.type] }}
+                    @if (s.upcoming) {
+                      · {{ s.upcoming }} réservation(s) à venir
+                    }
+                  </span>
+                  @if (s.state === 'in_service') {
+                    <button class="btn btn-sm btn-danger" (click)="setState('out_of_service')">
+                      <app-icon name="ban" [size]="14" /> Mettre hors service
+                    </button>
+                  } @else {
+                    <button class="btn btn-sm btn-success" (click)="setState('in_service')">
+                      <app-icon name="check" [size]="14" /> Remettre en service
+                    </button>
+                  }
+                </div>
+              } @else {
+                <span class="muted small">Cliquez sur une place pour changer son état.</span>
+              }
+            </div>
+            <p class="muted small">
+              « Réservée » : une réservation commence plus tard aujourd'hui. « Occupée » : un
+              créneau est en cours.
+            </p>
+          </section>
+        </div>
+      } @else {
+        <app-skeleton variant="card" [count]="2" label="Chargement du parking…" />
+      }
+    }
+  } @else {
+    <app-skeleton variant="card" [count]="2" label="Chargement de vos parkings…" />
+  }
+</div>
+
+<!-- Formulaire partagé : modification / création -->
+<ng-template #parkingForm>
+  <form class="form" [formGroup]="form" (ngSubmit)="$event.preventDefault()">
+    <div class="field">
+      <label for="pf-name">Nom</label
+      ><input id="pf-name" class="input" formControlName="name" placeholder="Parking …" />
+    </div>
+    <div class="field">
+      <label for="pf-addr">Adresse</label
+      ><input id="pf-addr" class="input" formControlName="address" />
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label for="pf-zone">Zone</label>
+        <select id="pf-zone" class="input" formControlName="zone_id">
+          @for (z of zones(); track z.id) {
+            <option [ngValue]="z.id">{{ z.city }} — {{ z.name }}</option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label for="pf-rate">Tarif horaire (TND)</label
+        ><input
+          id="pf-rate"
+          type="number"
+          min="0"
+          step="0.5"
+          class="input"
+          formControlName="hourly_rate"
+        />
+      </div>
+    </div>
+    <label class="check"><input type="checkbox" formControlName="open_24h" /> Ouvert 24h/24</label>
+    @if (!form.controls.open_24h.value) {
+      <div class="form-row">
+        <div class="field">
+          <label for="pf-open">Ouverture</label
+          ><input id="pf-open" type="time" class="input" formControlName="opening_time" />
+        </div>
+        <div class="field">
+          <label for="pf-close">Fermeture</label
+          ><input id="pf-close" type="time" class="input" formControlName="closing_time" />
+        </div>
+      </div>
+    }
+    <div class="form-row">
+      <div class="field">
+        <label for="pf-lat">Latitude</label
+        ><input
+          id="pf-lat"
+          type="number"
+          step="0.000001"
+          class="input"
+          formControlName="latitude"
+          placeholder="36.8000"
+        />
+      </div>
+      <div class="field">
+        <label for="pf-lng">Longitude</label
+        ><input
+          id="pf-lng"
+          type="number"
+          step="0.000001"
+          class="input"
+          formControlName="longitude"
+          placeholder="10.1800"
+        />
+      </div>
+    </div>
+    <button type="button" class="link small" (click)="useMyPosition()">
+      <app-icon name="locate" [size]="14" /> Utiliser ma position actuelle
+    </button>
+    <div class="field">
+      <label for="pf-desc">Description</label
+      ><textarea id="pf-desc" class="input" formControlName="description" rows="3"></textarea>
+    </div>
+    <div class="field">
+      <span class="label">Équipements</span>
+      <div class="chips">
+        @for (a of amenities(); track a.id) {
+          <button
+            type="button"
+            class="chip toggle"
+            [class.on]="form.controls.amenity_ids.value.includes(a.id)"
+            (click)="toggleAmenity(a.id)"
+            [attr.aria-pressed]="form.controls.amenity_ids.value.includes(a.id)"
+          >
+            <app-icon [name]="amenityIcon(a.icon)" [size]="14" /> {{ a.label }}
+          </button>
+        }
+      </div>
+    </div>
+    @if (creating()) {
+      <div class="form-row">
+        <div class="field">
+          <label for="pf-lv">Nombre de niveaux</label
+          ><input id="pf-lv" type="number" min="1" max="6" class="input" formControlName="levels" />
+        </div>
+        <div class="field">
+          <label for="pf-sp">Places par niveau</label
+          ><input
+            id="pf-sp"
+            type="number"
+            min="1"
+            max="60"
+            class="input"
+            formControlName="spaces_per_level"
+          />
+        </div>
+      </div>
+    }
+    @if (form.invalid && form.touched) {
+      <p class="alert alert-error small">Vérifiez le nom, l'adresse, la zone et le tarif.</p>
+    }
+  </form>
+</ng-template>
+
+@if (creating()) {
+  <app-modal title="Ajouter un parking" (closed)="creating.set(false)">
+    <p class="alert alert-info small">
+      <app-icon name="info" [size]="16" /> Le parking sera « en validation » : il sera publié après
+      contrôle par l'administrateur.
+    </p>
+    <ng-container *ngTemplateOutlet="parkingForm" />
+    <div class="row end">
+      <button class="btn" (click)="creating.set(false)">Annuler</button>
+      <button class="btn btn-primary" (click)="create()">Créer le parking</button>
+    </div>
+  </app-modal>
+}
+
+@if (addingSpaces()) {
+  <app-modal title="Ajouter des places" (closed)="addingSpaces.set(false)">
+    <form class="form" [formGroup]="spacesForm" (ngSubmit)="addSpaces()">
+      <div class="form-row">
+        <div class="field">
+          <label for="as-level">Niveau</label
+          ><input id="as-level" class="input" formControlName="level" placeholder="RDC, -1, 1…" />
+        </div>
+        <div class="field">
+          <label for="as-count">Nombre</label
+          ><input
+            id="as-count"
+            type="number"
+            min="1"
+            max="60"
+            class="input"
+            formControlName="count"
+          />
+        </div>
+      </div>
+      <div class="field">
+        <label for="as-type">Type</label>
+        <select id="as-type" class="input" formControlName="type">
+          <option value="standard">Standard</option>
+          <option value="pmr">PMR</option>
+          <option value="electric">Borne électrique</option>
+          <option value="moto">Moto</option>
+        </select>
+      </div>
+      <p class="muted small">
+        Les codes sont attribués automatiquement à la suite (P-73, P-74…) et restent uniques dans le
+        parking.
+      </p>
+      <div class="row end">
+        <button type="button" class="btn" (click)="addingSpaces.set(false)">Annuler</button
+        ><button class="btn btn-primary" type="submit">Ajouter</button>
+      </div>
+    </form>
+  </app-modal>
+}
+
+@if (addingPhoto()) {
+  <app-modal title="Ajouter une photo" (closed)="addingPhoto.set(false)">
+    <div class="form">
+      <div class="field">
+        <label for="ph-url">Adresse (URL) de l'image</label>
+        <input id="ph-url" class="input" [(ngModel)]="photoUrl" placeholder="https://…/photo.jpg" />
+        <span class="hint">Exemples fournis : /img/parking-1.svg à /img/parking-6.svg</span>
+      </div>
+      <div class="row end">
+        <button class="btn" (click)="addingPhoto.set(false)">Annuler</button
+        ><button class="btn btn-primary" (click)="addPhoto()">Ajouter</button>
+      </div>
+    </div>
+  </app-modal>
+}

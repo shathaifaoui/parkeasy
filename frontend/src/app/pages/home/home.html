@@ -1,0 +1,82 @@
+<section class="hero" [class.inside]="auth.isLoggedIn()">
+  <div class="hero-inner" [class.container]="!auth.isLoggedIn()">
+    <h1>Trouvez et réservez une place <br class="wide" />de parking <span>facilement.</span></h1>
+    <p class="lead">
+      Comparez les tarifs et les disponibilités des parkings de Tunis, puis réservez en quelques
+      clics.
+    </p>
+    <app-search-form variant="hero" />
+    <!-- Hauteur réservée : les chiffres clés arrivent après la requête sans décaler la page -->
+    @if (stats(); as s) {
+      <ul class="figures fade-in" aria-label="Chiffres clés">
+        <li>
+          <b>{{ s.parkings }}</b> parkings
+        </li>
+        <li>
+          <b>{{ s.spaces }}</b> places
+        </li>
+        <li>
+          <b>{{ s.satisfaction ?? '—' }}/5</b> satisfaction
+        </li>
+        <li>
+          <b>{{ s.reservations.toLocaleString('fr-FR') }}</b> réservations
+        </li>
+      </ul>
+    } @else {
+      <div class="figures-ph" aria-hidden="true"></div>
+    }
+  </div>
+</section>
+
+<div [class.container]="!auth.isLoggedIn()" [class.page]="auth.isLoggedIn()" class="below">
+  <section id="comment" class="steps" aria-label="Comment ça marche">
+    @for (s of steps; track s.title; let i = $index) {
+      <div class="step card">
+        <span class="ico"><app-icon [name]="s.icon" [size]="20" /></span>
+        <div>
+          <strong>{{ i + 1 }}. {{ s.title }}</strong
+          ><span class="muted small">{{ s.text }}</span>
+        </div>
+      </div>
+    }
+  </section>
+
+  <section class="popular">
+    <div class="row-between head">
+      <h2>Parkings populaires à Tunis</h2>
+      <a routerLink="/parkings" class="strong small">Voir tous les parkings →</a>
+    </div>
+    @if (popularFailed()) {
+      <app-error-state
+        title="Les parkings populaires n'ont pas pu être chargés"
+        (retry)="loadPopular()"
+      />
+    } @else if (popular(); as list) {
+      <div class="grid fade-in">
+        @for (p of list; track p.id) {
+          <app-parking-tile [parking]="p" />
+        }
+      </div>
+    } @else {
+      <app-skeleton variant="tile" [count]="3" label="Chargement des parkings populaires…" />
+    }
+  </section>
+
+  @if (!auth.isLoggedIn()) {
+    <section class="cta card">
+      <div>
+        <h2>Vous gérez un parking ?</h2>
+        <p class="muted">
+          Publiez vos places, suivez votre taux d'occupation et confirmez les réservations depuis
+          votre espace gestionnaire.
+        </p>
+      </div>
+      <a
+        routerLink="/inscription"
+        [queryParams]="{ profil: 'gestionnaire' }"
+        class="btn btn-primary"
+        >Publier mon parking</a
+      >
+    </section>
+  }
+</div>

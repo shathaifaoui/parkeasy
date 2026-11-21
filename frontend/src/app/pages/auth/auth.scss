@@ -1,0 +1,99 @@
+.auth-page {
+  display: grid;
+  place-items: center;
+  padding: 2.5rem 1rem 3rem;
+}
+.box {
+  width: min(440px, 100%);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  &.wide {
+    width: min(620px, 100%);
+  }
+  h1 {
+    margin: 0;
+  }
+  p {
+    margin: 0;
+  }
+}
+.logo {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.4rem;
+}
+.pwd {
+  display: flex;
+  gap: 0.4rem;
+}
+.demo {
+  background: #f6f9fd;
+  border-radius: 12px;
+  padding: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  button {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 0.5rem 0.6rem;
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+    color: var(--navy);
+    text-align: left;
+    &:hover {
+      border-color: var(--blue);
+    }
+  }
+}
+.roles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+  @media (max-width: 500px) {
+    grid-template-columns: 1fr;
+  }
+}
+.role {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.9rem;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  input {
+    position: absolute;
+    opacity: 0;
+  }
+  app-icon {
+    color: var(--blue);
+  }
+  &.on {
+    border-color: var(--blue);
+    background: var(--blue-50);
+  }
+  &:focus-within {
+    outline: 3px solid var(--blue);
+    outline-offset: 2px;
+  }
+}
+.error {
+  color: var(--red);
+  font-size: 0.8rem;
+  font-weight: 600;
+}

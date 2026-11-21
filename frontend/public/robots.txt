@@ -1,0 +1,11 @@
+# ParkEasy — pages publiques indexables, espaces connectés exclus
+User-agent: *
+Allow: /
+Disallow: /gestion
+Disallow: /admin
+Disallow: /profil
+Disallow: /mes-reservations
+Disallow: /favoris
+Disallow: /reserver
+
+Sitemap: http://localhost:3000/sitemap.xml
