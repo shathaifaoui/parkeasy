@@ -4,7 +4,7 @@
 **Projet Web 2025/2026, Objectif 04 : finalisation du développement frontend et optimisation du site** (suite de l'Objectif 03).
 =======
 **Projet Web 2025/2026, Objectif 03 : développement et intégration des fonctionnalités principales.**
->>>>>>> a6a31640effb84d50ad1b047dfffe59e64fe3c22
+
 Équipe : Chadha Ifaoui & Meysem Guerbej.
 
 ParkEasy permet aux **automobilistes** de rechercher, comparer et réserver une place de parking. Les **gestionnaires** y publient leurs parkings, leurs places et suivent les réservations reçues. L'**administrateur** supervise la plateforme.
